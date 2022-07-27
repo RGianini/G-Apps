@@ -1,0 +1,34 @@
+function getCurrency(date) {
+  urlBase = "https://olinda.bcb.gov.br/olinda/servico/PTAX/versao/v1/odata/CotacaoMoedaDia(moeda=@moeda,dataCotacao=@dataCotacao)?@moeda=%27";
+  curr_std_codes = ["USD", "EUR", "JPY"];
+  strPrint = "";
+
+  for (var i = 0; i < curr_std_codes.length; i++) {
+    
+    urlGet = urlBase + curr_std_codes[i] + "%27&@dataCotacao=%27"+date+"%27&$top=10&$format=json&$select=cotacaoCompra,cotacaoVenda,dataHoraCotacao";
+    let response = UrlFetchApp.fetch(urlGet);
+    var data = JSON.parse(response.getContentText());
+    dataObj = data.value.slice(-1)[0];
+    dataStr = JSON.stringify(dataObj).split(",")[0];
+
+    strPrint = strPrint + curr_std_codes[i] + ": " + dataStr.split(":")[1] + "\n";
+  }
+
+  //Logger.log(strPrint);
+  sendMail(date,strPrint);
+}
+
+function sendMail(date, message){
+  recipientM = "example@domain";
+  ccM = "example2@domain"
+  MailApp.sendEmail(recipientM, "Câmbio BRL ("+date+")", message, {
+    cc: ccM,
+  });
+}
+
+
+function mainFunc() {
+ var dateAux = Utilities.formatDate(new Date(), "GMT-3", "MM/dd/yyyy");
+ date = dateAux.replace("/","-").replace("/","-");
+ getCurrency(date);
+}
